@@ -1,0 +1,491 @@
+---
+title: "ANLY-510_Project : Analysis of International Tourism"
+author: "Sujitha Sunkara"
+output: 
+        html_document:
+          code_folding: hide # this is important to keep a report tidy
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width = 10, fig.height= 8, fig.path= 'Figs/',fig.align="center",
+                      warning = FALSE, message = FALSE, echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(rgdal)
+library(leaflet)
+library(maps)
+library(reshape2)
+library(mapview)
+library(expss)
+library(formattable)
+library(ggrepel)
+library(gridExtra)
+library(expss)
+library(highcharter)
+library(RColorBrewer)
+```
+
+### Introduction:  
+According to the World Tourism Organization (WTO), Tourism is defined as “travelling to and staying in places outside their usual environment for not more than one consecutive year for leisure, business and other purposes (Choudhary, 2017). In the year 2014, UNWTO stated that the tourism sector is becoming one of the largest and fastest growing sectors in the world for the past few decades (UNWTO, 2014). The output of this sector impacts the economy of a country directly or indirectly. This impact is more prevalent in developing countries as it plays a fundamental role in the development process. One way of measuring the impact would be monitoring the area where Gross Domestic Product Per Capita (GDP) that is driven by tourism (Voumik, Barmon, & Nath, 2014).  
+ 
+### Overview:  
+Tourism can occur within or outside the border of a country defining them as intranational or international (Mellander, 2018). For the purpose of this study, our focus will be on international tourism or travel that occurs between countries or nations.  According to the Economic Impact World (2018), the sector of travel and tourism contributes to over 313 million jobs and $ 882 billion investments. When compared to the 3% growth in the global economy, it contributes to 4.6% of the economy on a global scale.  
+ 
+Tourism has evolved into a worldwide financial, social and environmental industry. Tourism is the primary source of income in many nations. The tourism industry, however, is a fast-moving industry. It is very delicate and susceptible to different variables as well. The tourism markets are also very varied for each location (nation). Tourism information is commonly accessible and updated. One of the most important report of national tourism statistics; number of tourist arrivals from each country of origin, number of departures, their average length of stay and total receipt or expenditure. International Tourist Arrivals (ITA), International Tourist Departures (ITD) and International Tourist Receipts (ITR) have traditionally been used as a benchmark aggregate series to evaluate the general significance of tourism in nations and around the world. 
+ 
+The primary focus of this study is how one nation economy can be impacted by the number of tourists coming in from other nations. This can be accomplished by including global tourist arrivals and of global tourist receipts datasets. Receipts for global transport, include payments to domestic carriers. These receipts include any other payment made in advance for products or services obtained at the destination country. They may also include receipts from tourists on the same day, unless they are sufficiently essential to warrant distinct classification. All the data that is available for research is in US dollar values.  
+
+### Research Question: 
+ 
+* Tourism is unique and diverse with respect to the economic impact to a nation. Its impacts can begin with globally operated hotels, cruise liners, airlines to something locally operated like bed and breakfast places, or activities that include cultural awareness of the area. Some of the key research questions that can be explored in this research paper include:  
+  + The contribution made to the GDP by tourism.  
+  + The proportion of expenditure by continents.  
+  + Is the income group of a country directly proportional to the number of tourist departures in the country?  
+  + Is the expenditure of a country directly proportional to the income group of a country?  
+  + Identify the top 10 countries that have experienced the most changes in expenditure.  
+  + Analyze the most visited country amongst the world.  
+
+### The Data Set:  
+ 
+* The data sets and files that are used for the purpose of this research have been obtained from World Tourism Organization(WTO), Yearbook of Tourism Statistics, Compendium of Tourism Statistics, World Bank national accounts data and OECD National Accounts (The World Bank, 2019). Data sets shall include but may not be limited to:  
+  + International Tourism, number of arrivals 
+  + International Tourism, expenditures for passenger transport items (current US $) 
+  + International Tourism, expenditures (% of total imports) 
+  + International Tourism, expenditures (current US $) 
+  + GDP (current US$) 
+  + International Tourism, number of departures 
+  + Shapefiles for Country borders and State Borders 
+
+The summary of the GDP based on Income Group of the countries used for this research are: 
+
+```{r Define, warning=FALSE, message=FALSE}
+
+# Read files from computer
+GDP <- data.frame(read.csv(file="API_NY GDP growth/API_NY.GDP.MKTP.CD_DS2_en_csv_v2_126271.csv", 
+                           skip=3, header=TRUE) )
+Expenditures <- data.frame(read.csv(file="API_ST-3 expenditures/API_ST.INT.XPND.CD_DS2_en_csv_v2_49796.csv", 
+                                    skip=3, header=TRUE) )
+Num_Arrivals  <- data.frame(read.csv(file="API_ST_No of Arrivals/API_ST.INT.ARVL_DS2_en_csv_v2_103871.csv",
+                                     skip=3, header=TRUE) )
+Num_Departures <- data.frame(read.csv(file="API_ST-2 No of Departures/API_ST.INT.DPRT_DS2_en_csv_v2_43714.csv", 
+                                      skip=3, header=TRUE) )
+transport_items <- data.frame(read.csv(file="API_ST expenditures for passenger transport items/API_ST.INT.TRNX.CD_DS2_en_csv_v2_44287.csv", 
+                                       skip=3, header=TRUE))
+income_group <- read_csv("API_NY GDP growth/Metadata_Country_API_NY.GDP.MKTP.CD_DS2_en_csv_v2_126271.csv")[ ,1:3]
+us_df <- data.frame(read.csv(file="Arrivals_US_Country.csv",skip=1, header=TRUE))
+us_df <- us_df %>% select(c(1,2,4,6,8))
+us_df<- us_df[complete.cases(us_df), ]
+colnames(us_df)[colnames(us_df)=="World.Region.Country.of.Citizenship..COC."] <- "COC"
+us_df$COC <- str_to_title(us_df$COC)
+us_df$Business <- as.numeric(gsub(",","",us_df$Business))
+us_df$Pleasure <- as.numeric(gsub(",","",us_df$Pleasure))
+us_df$Student <- as.numeric(gsub(",","",us_df$Student))
+us_df$Total.Arrivals <- as.numeric(gsub(",","",us_df$Total.Arrivals))
+options(scipen=999)
+
+# Summarize the GDP data 
+summary_df <- merge(GDP,income_group, by.x= "Country.Code", by.y="Country Code")
+sum_df_1 <- summary_df %>% select(c(1,2,62,65,66))
+sum_df<- sum_df_1[complete.cases(sum_df_1), ]
+#View(sum_df)
+sum_df$IncomeGroup <- factor(sum_df$IncomeGroup, levels = c("High income","Upper middle income","Lower middle income",
+                                                           "Low income"))
+#summary(sum_df)
+bs_df <- sum_df %>%
+  group_by(IncomeGroup) %>%
+  summarise(
+    min_GDP_2017 = min(X2017),
+    mean_GDP_2017 = mean(X2017),
+    max_GDP_2017 = max(X2017)
+  )
+formattable(bs_df)
+```
+
+* Data for assessment are gathered from multiple versions of world and regional tourism statistics produced by the World Tourism Organization.  
+  + International visitors, the number of arrivals dataset offers the amount of individuals who have come in separate years to the nation. 
+  + International tourism receipts are spending by inbound global tourists presenting receipts from distinct nations in separate years. 
+  + International travel receipts for travel items generate travel items spending for distinct nations. 
+
+
+### Total Number of Arrivals (2013-2017)
+All 263 countries in the data set are associated with a region. The below plot displays the total number of arrivals into countries based on the region. Based on the below result, we can observe that there Europe and Central Asia is considered to have the highest number of international arrivals between the years 2013-2017.
+Each of the country is also associated with the income group of that country. Based on the plot below, there is a direct relation to the income gropu of the country and the number of international arrivals in the country. 
+
+```{r totalarrivals, MESSAGE=FALSE, WARNING=FALSE}
+arr_df_1 <- Num_Arrivals %>% select(c(1,2,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62))
+arrivals_df_1 <- merge(arr_df_1,income_group, by.x= "Country.Code", by.y="Country Code")
+arr_df<- arrivals_df_1[complete.cases(arrivals_df_1), ]
+
+pl_arr_region <- arr_df %>% 
+  group_by(Region) %>%
+  summarise(
+    "1995" = sum(X1995),
+    "1996" = sum(X1996),
+    "1997" = sum(X1997),
+    "1998" = sum(X1998),
+    "1999" = sum(X1999),
+    "2000" = sum(X2000),
+    "2001" = sum(X2001),
+    "2002" = sum(X2002),
+    "2003" = sum(X2003),
+    "2004" = sum(X2004),
+    "2005" = sum(X2005),
+    "2006" = sum(X2006),
+    "2007" = sum(X2007),
+    "2008" = sum(X2008),
+    "2009" = sum(X2009),
+    "2010" = sum(X2010),
+    "2011" = sum(X2011),
+    "2012" = sum(X2012),
+    "2013" = sum(X2013),
+    "2014" = sum(X2014),
+    "2015" = sum(X2015),
+    "2016" = sum(X2016),
+    "2017" = sum(X2017),
+  )
+
+pl_arr.melted <- melt(pl_arr_region, id.vars = "Region")
+
+#View(pl_arr.melted)
+
+cols <- brewer.pal(7, "Set1")
+pl<- hchart(pl_arr.melted, "line", hcaes(x=variable, y= value, group = Region))%>%
+  hc_colors(cols)%>%
+  hc_chart(style = list(fontFamily = "Georgia",
+                        fontWeight = "bold")) %>%
+  hc_xAxis(title = list(text="Year")) %>%
+  hc_yAxis(title = list(text="Number of Arrivals(in million)")) %>%
+  hc_title(text = "Total Number of International Arrivals by Region")%>%
+  hc_plotOptions(series = list(marker = list(enabled = TRUE, symbol = "circle")))
+
+pl
+  
+```
+
+
+### Contribution of Travel Expenses to the GDP (2013-2017)
+International tourism expenditures for passenger transport items are expenditures of international outbound visitors in other countries for all services provided during international transportation by nonresident carriers. Also included are passenger services performed within an economy by nonresident carriers. Excluded are passenger services provided to nonresidents by resident carriers within the resident economies; these are included in travel items. In addition to the services covered by passenger fares--including fares that are a part of package tours but excluding cruise fares, which are included in travel--passenger services include such items as charges for excess baggage, vehicles, or other personal accompanying effects and expenditures for food, drink, or other items for which passengers make expenditures while on board carriers. 
+
+* This expense report when compared to its contribution to the GDP of the top 10 countries in expenses of each income group, the below points are of key observation:
+  + The travel expenditures do not contibute more than 5% of the GDP for any country irrespective of the income group.
+  + Haiti is the only country where there is a significant contribution of travel expenses to the GDP. 
+  
+```{r expensesGDP1, warning= FALSE, message= FALSE}
+transport_items_1 <- transport_items %>%select(c(1,2,62))
+gdp_1 <- GDP %>% select(c(1,2,62))
+mydf_exp1 <- merge(transport_items_1, gdp_1, by.x = "Country.Code", by.y = "Country.Code")
+mydf_exp2 <- merge(mydf_exp1, income_group, by.x= "Country.Code", by.y = "Country Code")
+
+mydf_exp <- mydf_exp2 %>% select(c(1,2,3,5,6,7))
+colnames(mydf_exp)[colnames(mydf_exp)=="X2017.x"] <- "Expenses"
+colnames(mydf_exp)[colnames(mydf_exp)=="X2017.y"] <- "GDP"
+
+mydf_expense <- mydf_exp[complete.cases(mydf_exp), ]
+
+
+## Graph for High Income
+mydf_exp_hi <- filter(mydf_expense, mydf_expense$IncomeGroup == "High income")
+mydf_exp_hi <- mydf_exp_hi %>% select(c(1,3,4)) 
+mydf_exp_hi <- mydf_exp_hi %>% top_n(10, Expenses)
+
+mydf_exp_hi.melted <- melt(mydf_exp_hi, id.vars = "Country.Code",
+                           factorsAsStrings = F)
+
+mydf_exp_hi.melted$variable <- factor(mydf_exp_hi.melted$variable, levels = c("GDP","Expenses"))
+p_hi <- ggplot(mydf_exp_hi.melted, aes(Country.Code, value, fill = variable)) +
+    geom_bar(position = "fill", stat = "identity")+
+  ggtitle("High Income countries") 
+
+## Graph for upper middle income
+mydf_exp_umi <- filter(mydf_expense, mydf_expense$IncomeGroup == "Upper middle income")
+mydf_exp_umi <- mydf_exp_umi %>% select(c(1,3,4)) 
+mydf_exp_umi <- mydf_exp_umi %>% top_n(10, Expenses)
+mydf_exp_umi_melted <- melt(mydf_exp_umi, id.vars = "Country.Code", 
+                            factorsAsStrings = F)
+mydf_exp_umi_melted$variable <- factor(mydf_exp_umi_melted$variable, levels = c("GDP","Expenses"))
+p_umi <- ggplot(mydf_exp_umi_melted, aes(Country.Code, value, fill = variable)) +
+  geom_bar(position = "fill", stat = "identity")+
+  ggtitle("Upper middle Income countries")  
+
+## Graph for lower middle income
+mydf_exp_lmi <- filter(mydf_expense, mydf_expense$IncomeGroup == "Lower middle income")
+mydf_exp_lmi <- mydf_exp_lmi %>% select(c(1,3,4)) 
+mydf_exp_lmi <- mydf_exp_lmi %>% top_n(10, Expenses)
+mydf_exp_lmi_melted <- melt(mydf_exp_lmi, id.vars = "Country.Code", 
+                            factorsAsStrings = F)
+mydf_exp_lmi_melted$variable <- factor(mydf_exp_lmi_melted$variable, levels = c("GDP","Expenses"))
+p_lmi <- ggplot(mydf_exp_lmi_melted, aes(Country.Code, value, fill = variable)) +
+  geom_bar(position = "fill", stat = "identity")+
+  ggtitle("Lower Middle Income countries") 
+
+## Graph for low income
+mydf_exp_li <- filter(mydf_expense, mydf_expense$IncomeGroup == "Low income")
+mydf_exp_li <- mydf_exp_li %>% select(c(1,3,4)) 
+mydf_exp_li <- mydf_exp_li %>% top_n(10, Expenses)
+mydf_exp_li_melted <- melt(mydf_exp_li, id.vars = "Country.Code")
+mydf_exp_li_melted$variable <- factor(mydf_exp_li_melted$variable, levels = c("GDP","Expenses"))
+p_li <- ggplot(mydf_exp_li_melted, aes(Country.Code, value, fill = variable)) +
+  geom_bar(position = "fill", stat = "identity")+
+  ggtitle("Low Income countries") 
+
+img <- grid.arrange(p_hi,p_umi,p_lmi,p_li, ncol = 2, top="Percentage of Expenses Contributed to GDP of Countries grouped by Income")
+print(img)
+
+```
+### Purpose of Visit to USA
+
+
+```{r UStype, warning= FALSE, message= FALSE}
+
+regions<- readOGR(dsn = '/Users/varahee/Desktop/ANLY 512-51/gisdata/',layer = "TM_WORLD_BORDERS-0.3")
+us_df_cord <- merge(regions, us_df , by.x= "NAME", by.y = "COC",
+                    duplicateGeoms = TRUE)
+
+
+mybins<- c(0,50000, 100000, 200000, 500000,1000000,5000000)
+pal <- colorNumeric(palette="YlOrBr", us_df_cord$Total.Arrivals, na.color="transparent") 
+
+mytext <- paste(
+  "Country: ", us_df_cord@data$NAME,"<br/>", 
+  "Business: ", us_df_cord@data$Business, "<br/>", 
+  "Pleasure: ", us_df_cord@data$Pleasure, "<br/>",
+  "Students: ", us_df_cord@data$Student, "<br/>", 
+  "Total: ", us_df_cord@data$Total.Arrivals, sep="") %>%
+  lapply(htmltools::HTML)
+
+
+
+map<- leaflet(us_df_cord) %>% 
+  addTiles()  %>% 
+  setView( lat=10, lng=0 , zoom=2) %>%
+  addPolygons( 
+    fillColor = ~pal(Total.Arrivals), 
+    stroke=TRUE, 
+    fillOpacity = 0.9, 
+    color="white", 
+    weight=0.3,
+    label = mytext,
+    labelOptions = labelOptions( 
+      style = list("font-weight" = "normal", padding = "3px 8px"), 
+      textsize = "13px", 
+      direction = "auto"
+    )
+  ) %>%
+  addLegend( pal=pal, values=~Total.Arrivals, opacity=0.9, title = "Number of International Arrivals", position = "bottomleft" )
+
+
+print(map)
+```
+
+### Identify the top 10 countries that have experienced the most changes in expenditure. 
+
+
+```{r expenditure, warning= FALSE, message= FALSE}
+#colnames(Expenditures)
+Exp_Change <- (Expenditures[, 41:62] - Expenditures[, 40:61])
+Exp_Change$`Country.Name`<-Expenditures$`Country.Name`
+# Re-structure the data
+library(reshape2)
+newdf_LONG <- melt(Exp_Change, id.vars="Country.Name",  measure.vars=c(1:22))
+#View(newdf_LONG)
+newdf_LONG<-newdf_LONG %>% 
+  rename(`Expenditure change` = `value`) %>%  # rename 
+  mutate(`Expenditure change`= round(`Expenditure change`/100000, digits = 0)) %>% 
+  rename(`Year` = `variable`) 
+  
+# Leaflet map 
+countries<-readOGR(dsn = '.',layer="TM_WORLD_BORDERS-0.3")
+df_cord <- merge(data.frame(countries) , newdf_LONG , by.x= "NAME", by.y = "Country.Name",
+                 duplicateGeoms = TRUE)
+
+
+#pal <- colorNumeric("viridis", domain=df_cord$`Expenditure change`)
+pal <- colorBin("viridis", df_cord$`Expenditure change`,  bins = 5)
+
+library(naniar)
+vis_miss(df_cord)  # do we have all the change in expenditure (%) values?
+df_cord<-df_cord[!is.na(df_cord$`Expenditure change`), ] # remove missing
+
+library(lubridate)
+df_cord$Year<-as.numeric(substr(df_cord$Year, 2, 6))
+#df_cord$Year<-strptime(as.character(df_cord$Year),format = "%Y")
+
+my_label <- paste(
+  #"Year: ", df_cord$Year,"<br/>", 
+  "Country: ", df_cord$Name,"<br/>", 
+  "Expenditure change from previous year: ", df_cord$`Expenditure change`, sep="") %>%
+  lapply(htmltools::HTML)
+
+library(htmlwidgets)
+library(htmltools)
+tag.map.title <- tags$style(HTML("
+  .leaflet-control.map-title { 
+                                 transform: translate(-50%,20%);
+                                 position: fixed !important;
+                                 left: 10%;
+                                 text-align: center;
+                                 padding-left: 10px; 
+                                 padding-right: 10px; 
+                                 background: rgba(255,255,255,0.75);
+                                 font-weight: bold;
+                                 font-size: 14px;
+                                 }
+                                 "))
+
+title <- tags$div(
+  tag.map.title, HTML("Change in Expenditures [million US $] \n from previous year")
+)  
+
+
+leaflet(df_cord)%>%
+  addProviderTiles("CartoDB") %>%
+  setView( lat=10, lng=-10 , zoom=1) %>%
+  addCircles(data=df_cord, weight = .5, color = ~pal(df_cord$`Expenditure change`),
+                   radius = df_cord$`Expenditure change`*5,  
+                   label=strwrap(paste(df_cord$Year,": ", df_cord$Country.Name,simplify = TRUE,
+                                       clusterOptions = markerClusterOptions()))) %>%
+
+  addLegend(
+    position=c("bottomleft"),
+    pal=pal,values=df_cord$`Expenditure change`, 
+    title = "Expenditure change [US]", opacity = 1) %>%
+  addControl(title, position = "topleft", className="map-title")
+
+```
+# The United States benefits from the class of tourism 
+The chart below shows which US tourism category is rising GDP. Travel and tourism, among other groups, contribute directly to jobs where GDP is growing
+```{r GDP Tourism, warning= FALSE, message= FALSE}
+GDPtourism <- read.csv("C:/Users/keert/Desktop/Harrisburg study/512-51/project/data.csv")
+GDPdata=GDPtourism[10954:11019,c(4,6:26)] 
+
+GDPdata1=data.frame(t(GDPdata)) 
+
+GDPdata2=GDPdata1[c(2:22),] 
+
+colnames(GDPdata2) = GDPdata$Indicator 
+
+GDPdata2$group=row.names(GDPdata2) 
+
+GDPdata3=melt(GDPdata2,id="group") 
+
+GDPdata3$value=as.numeric(GDPdata3$value) 
+
+head(GDPdata3) 
+
+  
+
+ggplot(data=GDPdata3,aes(x=variable,y=value,fill=group))+ 
+
+  geom_bar(stat="identity",width=1,colour="black",size=0.1)+ 
+
+  coord_polar()+ 
+
+  xlab("")+ylab("") 
+
+ 
+```
+# Biggest spenders of international Tourism
+In the period 2013 to 2017, the more visitors spent during Europe and Central Asia compared to other regions. More arrivals in this area as well. We may assume that international tourism arrivals are directly related to spending on international tourism
+
+```{r spenders, warning= FALSE, message= FALSE}
+exp_df_1 <- Expenditure %>% select(c(1,2,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62)) 
+expenditure_df_1 <- merge(exp_df_1,income_group, by.x= "Country.Code", by.y="Country Code") 
+exp_df<- expenditure_df_1[complete.cases(expenditure_df_1), ] 
+pl_exp_region <- exp_df %>%  
+  group_by(Region) %>% 
+  summarise( 
+    "2013" = sum(X2013), 
+    "2014" = sum(X2014), 
+    "2015" = sum(X2015), 
+    "2016" = sum(X2016), 
+    "2017" = sum(X2017), 
+  ) 
+pl_exp_region.melted <- melt(pl_exp_region, id.vars = "Region") 
+ggplot(data=pl_exp_region.melted,aes(x=variable,y=value,fill = Region))+  
+  geom_bar(stat="identity") 
+```
+
+#Costliest Region in the world
+Tourism's main advantage is improving the economy of the country. Tourists spend money on a wide variety of services such as accommodation, transportation, water, and health services. International tourism receipts are expenditures by international inbound visitors, including payments to national carriers for international transport. These receipts include any other prepayment made for goods or services received in the destination country. We may assume that Latin America and the Caribbean have more receipts than any other region on the basis of the graph below. Snice Number of arrivals is more in Europe region receipts are not more in Europe and central Asia region. We can therefore infer that Latin America and the Caribbean are the costly region
+
+```{r spenders, warning= FALSE, message= FALSE}
+Receipts <- read.csv("C:/Users/keert/Desktop/Harrisburg study/512-51/project/API_ST.INT.RCPT.XP.ZS_DS2_en_csv_v2_260075.csv")
+
+Receiptsdata <- Receipts %>% select(c(1,2,52,53,54,55,56,57,58,59,60,61,62))
+
+Receiptsdata1<- merge(Receiptsdata,income_group, by.x= "Country.Code", by.y="Country Code")
+Receipts_df<- Receiptsdata1[complete.cases(Receiptsdata1), ]
+
+
+
+
+Receipts_region <-Receipts_df %>% 
+  group_by(Region) %>%
+  summarise(
+    "2007" = sum(X2007),
+    "2008" = sum(X2008),
+    "2009" = sum(X2009),
+    "2010" = sum(X2010),
+    "2011" = sum(X2011),
+    "2012" = sum(X2012),
+    "2013" = sum(X2013),
+    "2014" = sum(X2014),
+    "2015" = sum(X2015),
+    "2016" = sum(X2016),
+    "2017" = sum(X2017),
+  )
+
+Receipts_region.melted <- melt(Receipts_region, id.vars = "Region")
+Receipts_region.melted$variable <- as.numeric(as.character(Receipts_region.melted$variable))
+ggplot(data = Receipts_region.melted, aes(x=variable, y=value, color=factor(Region)))+
+  geom_point(aes(color = Region))+
+  geom_line(aes(color = Region))+
+  ggtitle("Costliest Region")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  ylab("Receipts")+xlab("Year")+
+  scale_color_discrete(name = "Region")
+
+pl_arr_region.melted$variable <- as.numeric(as.character(pl_arr_region.melted$variable))
+ggplot(data = pl_arr_region.melted, aes(x=variable, y=value, color=factor(Region)))+
+  geom_point(aes(color = Region))+
+  geom_line(aes(color = Region))+
+  ggtitle("more arivals")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  ylab("Arrivals")+xlab("Year")+
+  scale_color_discrete(name = "Region")
+```
+## Percent change in arrivals from 2013 to 2017
+Every year, the number of arrivals who fly to each country changes. The graph below shows how the percentage shifted from 2013 to 2017 .. The percentage of arrivals  is decreasing in few countries such as Ukriane,Algeria, turkey. Countries such as the United States, Canada, Brazil, etc. are mild, there is no major change and few countries such as India are rising.
+```{r Arrivalschange, warning= FALSE, message= FALSE}
+Arrivals_change <- (Num_Arrivals$X2017/Num_Arrivals$X2013)
+Arrivals_change1 <- (Arrivals_change^ (1/5))-1
+Arrivals_change2 <- Arrivals_change1*100
+Num_Arrivals$change <- Arrivals_change2
+head(Num_Arrivals)
+
+Num_Arrivals_change_data <- Num_Arrivals[c(1:2,65)]
+countries<-readOGR(dsn = "C:/Users/keert/Desktop/Harrisburg study/512-51/project",layer="Countries_WGS84") 
+merge<-merge(countries,Num_Arrivals_change_data ,by.x="CNTRY_NAME",by.y="Country.Name",duplicateGeoms = TRUE) 
+Arrivaldata <- cut(merge$change, breaks = c(-20,0,10,30), 
+                   right= TRUE,
+                   labels = c("Arrivals declined[-20 - 0)","Moderate[0-15)","Arrivals Increased[10-30)")) 
+pal <- colorFactor(palette = c("red","green","blue"), domain =Arrivaldata)
+m<-leaflet(merge) %>% addTiles()%>% 
+  addPolygons(fillColor = ~pal(Arrivaldata) ,fillOpacity=.5,weight = .2) %>% 
+  addLegend(position=c("topright"), 
+            labels=Arrivaldata,pal=pal,values= ~Arrivaldata) %>% 
+   addPolygons(data=countries,weight=.75,color="green",fillOpacity = .2,popup = ~merge$CNTRY_NAME) 
+m
+```
+# References
+
+1. International tourism, expenditures for passenger transport items (current US$). Retrieved from https://data.worldbank.org/indicator/ST.INT.TRNX.CD 
+
+2. World GDP (current US$) data. Retrieved from 
+https://data.worldbank.org/indicator/ny.gdp.mktp.cd 
+
+3. Leaflet for R
+Retrieved from https://rstudio.github.io/leaflet/?Name=Leaflet%20for%20R
