@@ -30,29 +30,6 @@ The primary focus of this study is how one nation economy can be impacted by the
   + Shapefiles for Country borders and State Borders 
 
 The summary of the GDP based on Income Group of the countries used for this research are:
-
-IncomeGroup	min_GDP_2017	mean_GDP_2017	max_GDP_2017
-High income	289823500	751880463530	19485393853000
-Upper middle income	40620557	378935507782	12143491448186
-Lower middle income	185572502	138762852133	2652551202555
-Low income	1346841897	15387430659	81716326731
-Data for assessment are gathered from multiple versions of world and regional tourism statistics produced by the World Tourism Organization.
-International visitors, the number of arrivals dataset offers the amount of individuals who have come in separate years to the nation.
-International tourism receipts are spending by inbound global tourists presenting receipts from distinct nations in separate years.
-International travel receipts for travel items generate travel items spending for distinct nations.The summary of the GDP based on Income Group of the countries used for this research are:
-
-IncomeGroup	min_GDP_2017	mean_GDP_2017	max_GDP_2017
-High income	289823500	751880463530	19485393853000
-Upper middle income	40620557	378935507782	12143491448186
-Lower middle income	185572502	138762852133	2652551202555
-Low income	1346841897	15387430659	81716326731
-Data for assessment are gathered from multiple versions of world and regional tourism statistics produced by the World Tourism Organization.
-International visitors, the number of arrivals dataset offers the amount of individuals who have come in separate years to the nation.
-International tourism receipts are spending by inbound global tourists presenting receipts from distinct nations in separate years.
-International travel receipts for travel items generate travel items spending for distinct nations.
-
-
-
-
+![image](https://user-images.githubusercontent.com/80868520/145497655-7787f30b-7e3f-4688-bfd8-54850a999035.png)
 
 
