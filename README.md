@@ -32,4 +32,22 @@ The primary focus of this study is how one nation economy can be impacted by the
 The summary of the GDP based on Income Group of the countries used for this research are:
 ![image](https://user-images.githubusercontent.com/80868520/145497655-7787f30b-7e3f-4688-bfd8-54850a999035.png)
 
+## International Tourism
+While studies mention that the younger generation has taken a keen interest on travelling the world, the only way to understand the areas that peopel visit is by understanding the number of international arrivals and departured into and out of the country. The below analysis is considered for the years 2013-2017.
+### Total Number of Arrivals (2013-2017)
+![image](https://user-images.githubusercontent.com/80868520/145498200-87aef1bb-fc1e-4e98-adb7-6b0de3c135a3.png)
+### Number of Departures vs. Income Group of the country
+![image](https://user-images.githubusercontent.com/80868520/145498245-531f120d-4363-433d-907f-4a4718f50e33.png)
+### Percent change in arrivals from 2013 to 2017
+![image](https://user-images.githubusercontent.com/80868520/145498320-113e2363-8038-46a1-b590-eebb7c2cd427.png)
+### Contribution to the Economy made by Tourism
+![image](https://user-images.githubusercontent.com/80868520/145498377-e24900a5-ae92-40f9-9ece-3d0ae241b02c.png)
+### Identify the top 10 countries that have experienced the most changes in expenditure.
+![image](https://user-images.githubusercontent.com/80868520/145498451-052cdcf2-dffe-42ff-8954-3d4f04f1e306.png)
+### Expensive Regions in the world
+![image](https://user-images.githubusercontent.com/80868520/145498533-7d3a1556-25f2-4abe-9496-df195d80d4d1.png)
+
+
+
+
 
